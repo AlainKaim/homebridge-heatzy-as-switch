@@ -26,12 +26,10 @@ And to include these devices in automations : for instance, I turn my heaters to
 
 Heatzy app is still very useful for programation, and for specific modes (Holydays and boost). And, of course, to set to Hors-gel and Off state.
 ## Installation
-Install this plugin using `npm i -g homebridge-heatzy-as-switch`.
+Install or update this plugin using `npm i -g homebridge-heatzy-as-switch`.
 
 Update the `config.json` file of your Homebridge setup, by modifying the sample configuration below.
 
-## Updating
-Update to the latest release of this plugin using `npm i -g homebridge-tuya-lan`.
 
 ## Configurations
 The configuration parameters to enable your devices would need to be added to `accessories` section of the Homebridge configuration file. One block is necessary for each Heatzy device.
