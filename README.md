@@ -20,11 +20,14 @@ Obviously, it is nice to have all your devices under the Home app.
 I have chosen to put my Heatzy devices in the same (virtual) room, called "Heating" : it is easier to check what is going on.
 As for any Home devices, you can group Heatzy devices, and control them as one. And you can change how the switch looks in the Home app (Fan is my favourite). 
 
-But what is really nice is to control Heatzy from Siri : "Siri, allume le convecteur chambre" !
+But what is really nice is to control Heatzy from Siri : "Siri, allume le chauffage dans la chambre" !
 
 And to include these devices in automations : for instance, I turn my heaters to Eco when we are all out of our home (Use Eve app for more sophisticated automations).
 
 Heatzy app is still very useful for programation, and for specific modes (Holydays and boost). And, of course, to set to Hors-gel and Off state.
+
+And Alexa ? At this time, Alexa native support from Heatzy maker is very limited. I am using a smart plug to to make my main heater visible from Alexa. The smart plug is from the tuya kind, which means it is visible from Homekit (thanks to [homebridge-tuya-lan](https://www.npmjs.com/package/homebridge-tuya-lan)) and from Alexa. With some simple automations in Home app, I can sync my heatzy device and the smart plug : "Alexa, allume le chauffage"  turns on the plug, which turns on the Heatzy device.
+
 ## Installation
 Install or update this plugin using `npm i -g homebridge-heatzy-as-switch`.
 
@@ -88,7 +91,7 @@ Sometime, Heatzy servers are not working properly for a short period time. Durin
 From my experience, these periods are usually very short, so this is not a real problem.
 
 ## Credit
-To create this plugin, I learnt a lot, from many sources  : coding in NodeJS, using github and npm, understanding homebridge and axios, ...
+To create this plugin, I learned a lot, from many sources  : coding in NodeJS, using github and npm, understanding homebridge and axios, ...
 
 A lot of thanks to nfarina for homebridge !!!
 
