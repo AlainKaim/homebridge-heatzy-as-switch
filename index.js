@@ -109,7 +109,7 @@ async function  getState(device) { //return the state of the device as a boolean
   } catch (error) {
     // handle error
 //    console.log(error.response);
-     me.log ('Error : ' + error.response.status + ' ' + error.response.statusText );
+     me.log ('Error when getting state : ' + error.response.status + ' ' + error.response.statusText );
      state = null
   } finally {return state}
 } // getState
@@ -144,7 +144,7 @@ async function  setState(device, state) { //Set the state of the device, and ret
   } catch (error) {
     // handle error
 //    me.log(error);
-     me.log ('Error : ' + error.response.status + ' ' + error.response.statusText );
+     me.log ('Error when setting state : ' + error.response.status + ' ' + error.response.statusText );
      state = null
   } finally {return state}
 } // setState
