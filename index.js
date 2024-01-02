@@ -9,8 +9,9 @@ const axios = require('axios');
 const heatzyUrl = "https://euapi.gizwits.com/app/";
 const loginUrl = url.parse(heatzyUrl + "login")
 const heatzy_Application_Id = "c70a66ff039d41b4a220e198b0fcc8b3"
-const cft = 0 // Value used in the API to set set the comfort mode
-const eco = 1 // Value used in the API to set set the eco mode
+// The following values are used in the API to set the mode. (To get the mode, the API returns a string "cft" or "eco")
+const cft = 0 // Comfort mode
+const eco = 1 // Eco mode
 
 let Service, Characteristic
 
@@ -102,7 +103,7 @@ async function  getState(device) { //return the state of the device as a boolean
     // handle success
   //	console.log(response);
     if (response.status == 200) {
-		if (response.data.attr.mode == cft) {state = true	}
+		if (response.data.attr.mode == "cft") {state = true	}
     }
     else { // Useless ? all status != 2xx will be errors
     	me.log ('Error - returned code not 200: ' + response.status + ' ' + response.statusText + ' ' + response.data.error_message);
