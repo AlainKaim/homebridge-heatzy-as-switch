@@ -1,5 +1,5 @@
 'use strict'
-
+//
 // We will use axios and url modules to perform our HTTP requests.
 const url = require('url');
 const axios = require('axios');
@@ -67,6 +67,8 @@ async function updateToken (device) {  // This function get the Heatzy token, an
  			method: 'post',
   			url: loginUrl,
    			headers: {
+            	'Content-Type': 'application/json',
+                'Accept': 'application/json',
   				'X-Gizwits-Application-Id': heatzy_Application_Id
  			},
    			data: {
@@ -86,8 +88,8 @@ async function updateToken (device) {  // This function get the Heatzy token, an
   }
    catch (error) {
     // handle error
-//    me.log(error);
-     me.log ('Error : ' + error.response.status + ' ' + error.response.statusText );
+    me.log(error); // A désactiver
+     me.log ('Error authenticating: ' + error.response.status + ' ' + error.response.statusText );
      me.log ('Error - Plugin unable to login to Heatzy server, and will not work');
   }
 } // updateToken
