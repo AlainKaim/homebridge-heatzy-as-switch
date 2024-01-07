@@ -23,7 +23,7 @@
   "_shasum": "0960473c1bf7fa41f612abae6d2459aa7e07147d",
   "_spec": "homebridge-heatzy-as-switch",
   "_where": "/Users/alain/.homebridge/homebridge-heatzy-as-switch",
-  "author": "",
+  "author": ""
   "bundleDependencies": false,
   "dependencies": {
     "axios": "^1.6.2"
@@ -46,6 +46,6 @@
   "scripts": {
     "test": "echo \"Error: no test specified\""
   },
-  "version": "1.1.3",
+  "version": "1.2.0 ",
   "repository": "AlainKaim/homebridge-heatzy-as-switch"
 }
