@@ -46,6 +46,6 @@
   "scripts": {
     "test": "echo \"Error: no test specified\""
   },
-  "version": "1.2.0 ",
+  "version": "1.2.1",
   "repository": "AlainKaim/homebridge-heatzy-as-switch"
 }
