@@ -1,14 +1,14 @@
 'use strict'
 //
-// We will use axios and url modules to perform our HTTP requests.
-const url = require('url');
+// We will use axios module to perform our HTTP requests.
+const url = ('url');
 const axios = require('axios');
 
 // From Heatzy API : https://drive.google.com/drive/folders/0B9nVzuTl4YMOaXAzRnRhdXVma1k
 // https://heatzy.com/blog/tout-sur-heatzy
 const heatzyUrl = "https://euapi.gizwits.com/app/";
-const loginUrl = url.parse(heatzyUrl + "login")
-const heatzy_Application_Id = "c70a66ff039d41b4a220e198b0fcc8b3"
+const loginUrl = 'https://euapi.gizwits.com/app/login';
+const heatzy_Application_Id = "c70a66ff039d41b4a220e198b0fcc8b3";
 // The following values are used in the API to set the mode. (To get the mode, the API returns a string "cft" or "eco")
 const cft = 0 // Comfort mode
 const eco = 1 // Eco mode
@@ -27,8 +27,8 @@ function SwitchAccessory(log, config) {
     this.log = log
     this.config = config
 // Get informations from config file
-    this.getUrl = url.parse(heatzyUrl + "devdata/" + config['did'] + "/latest");
-  	this.postUrl = url.parse(heatzyUrl + "control/" + config['did']) ;
+    this.getUrl = heatzyUrl + "devdata/" + config['did'] + "/latest";
+  	this.postUrl = heatzyUrl + "control/" + config['did'] ;
   	this.name = config["name"];
   	this.username = config["username"];
   	this.password = config["password"];
@@ -62,6 +62,7 @@ function SwitchAccessory(log, config) {
 /////////// Supporting functions, for updating the token, getting and setting the state of a device
 async function updateToken (device) {  // This function get the Heatzy token, and store it
 	const me = device;
+//	me.log('loginUrl ' + loginUrl); // Used for debugging <--
 	try {
   		const response = await axios ({
  			method: 'post',
@@ -81,29 +82,48 @@ async function updateToken (device) {  // This function get the Heatzy token, an
     if (response.status == 200) {
     	me.heatzyToken = response.data.token;
     	me.heatzyTokenExpire_at = 1000 * response.data.expire_at; //The API returns a date in seconds, but javascript works in ms...
+		if (me.trace) {
+			me.log('Logged in Heatzy server.')
+		}
+
     }
     else { // Useless ? all status != 2xx will be errors
-    	me.log ('Error - returned code not 200: ' + response.status + ' ' + response.statusText + ' ' + response.data.error_message);
+    	me.log ('Error at login - returned code not 200: ' + response.status + ' ' + response.statusText + ' ' + response.data.error_message);
     }
   }
    catch (error) {
     // handle error
-    me.log(error); // A désactiver
-     me.log ('Error authenticating: ' + error.response.status + ' ' + error.response.statusText );
-     me.log ('Error - Plugin unable to login to Heatzy server, and will not work');
+//    me.log(error);
+    me.log ('Error - Plugin unable to login to Heatzy server, and will not work');
+    me.log('Error message : ', error.message);
+//     me.log ('Error authenticating: ' + error.response.status + ' ' + error.response.statusText );
   }
 } // updateToken
 
 
 async function  getState(device) { //return the state of the device as a boolean. Or null if undefined
 	const me = device;
+//    me.log ('test getState 0'); // Used for debugging <--
+//    me.log('getUrl ' + me.getUrl); // Used for debugging <--
+	if (me.heatzyTokenExpire_at < Date.now()) {await updateToken (device)}; // Forced at first run, and then calld only if token is expired
    	var state = false;
 	try {
-  		const response = 	await axios.get (me.getUrl, {
-  			headers: {'X-Gizwits-Application-Id': heatzy_Application_Id}
-  		})
+//  		const response = 	await axios.get (me.getUrl, {
+//  			headers: {'X-Gizwits-Application-Id': heatzy_Application_Id}
+  		const response = 	await axios ({
+ 			method: 'get',
+  			url: me.getUrl,
+   			headers: {
+            	'Content-Type': 'application/json',
+                'Accept': 'application/json',
+  				'X-Gizwits-Application-Id': heatzy_Application_Id,
+  				'X-Gizwits-User-token': me.heatzyToken
+ 			},
+ 		});
     // handle success
-  //	console.log(response);
+//    me.log ('test getState 1'); // Used for debugging <--
+//	me.log('getState new state ' + response.data.attr.mode); // Used for debugging <--
+//  	me.log(response);// Used for debugging <--
     if (response.status == 200) {
 		if (response.data.attr.mode == "cft") {state = true	}
     }
@@ -113,8 +133,8 @@ async function  getState(device) { //return the state of the device as a boolean
     }
   } catch (error) {
     // handle error
-//    console.log(error.response);
-     me.log ('Error when getting state : ' + error.response.status + ' ' + error.response.statusText );
+//    me.log ('test getState 2'); // Used for debugging <--
+     me.log ('Error when getting state : ' + error.code );
      state = null
   } finally {return state}
 } // getState
@@ -122,6 +142,8 @@ async function  getState(device) { //return the state of the device as a boolean
 
 async function  setState(device, state) { //Set the state of the device, and return it if successful. Or null if failed
 	const me = device;
+//    me.log ('test setState'); // Used for debugging <--
+//    me.log('postUrl ' + me.postUrl); // Used for debugging <--
 	if (me.heatzyTokenExpire_at < Date.now()) {await updateToken (device)}; // Forced at first run, and then calld only if token is expired
 	let mode = eco;
 	if (state) {mode = cft};
@@ -139,7 +161,8 @@ async function  setState(device, state) { //Set the state of the device, and ret
 			  }
 			}
   		})
-//	me.log(response);
+//	me.log('SetState mode 0=cft 1=eco : ' + mode ) // Used for debugging <--
+//	me.log(response);// Used for debugging <--
     if (response.status == 200) {
     }
     else { // Useless ? all status != 2xx will be errors
@@ -149,7 +172,7 @@ async function  setState(device, state) { //Set the state of the device, and ret
   } catch (error) {
     // handle error
 //    me.log(error);
-     me.log ('Error when setting state : ' + error.response.status + ' ' + error.response.statusText );
+     me.log ('Error when setting state : ' + error.code);
      state = null
   } finally {return state}
 } // setState
@@ -158,18 +181,18 @@ async function  setState(device, state) { //Set the state of the device, and ret
 
 SwitchAccessory.prototype.updateState = async function() {
   	var state = await getState(this);
-  //	if (this.trace) { this.log('DEBUG - Mode was ' + this.state + '. Updating it to : ' + state)} // Uncomment for easier debugging...
+  	if (this.trace) { this.log('DEBUG - Mode was ' + this.state + '. Updating it to : ' + state)} // Uncomment for easier debugging...
   	if (state !== null ) {
   		if (this.state === null) {this.state = state}  //Initialize for first run
   		if (state !== this.state) {	// If device state has changed since last update
 			if (this.trace) {
 				this.log('State has changed from: ' + this.state + ' to ' + state);
 			};
-			this.state = state;   // Update last state
-			this.service.updateCharacteristic(Characteristic.On, state);  // update HomeKit
+		this.state = state;   // Update last state
+		this.service.updateCharacteristic(Characteristic.On, state);  // update HomeKit
 		}
    	}
-	// If state  is null (unavailable) , do nothing because the device state will be updated at the next call
+	// If state  is null (i.e unavailable from Heatzy server) , do nothing because the device state will be updated at the next call
   } // SwitchAccessory.prototype.updateState
 
 
