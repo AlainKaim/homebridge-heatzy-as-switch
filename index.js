@@ -1,5 +1,5 @@
 'use strict'
-//v1.2.1
+//v1.3.0 
 // We will use axios module to perform our HTTP requests.
 const url = ('url');
 const axios = require('axios');
@@ -9,9 +9,14 @@ const axios = require('axios');
 const heatzyUrl = "https://euapi.gizwits.com/app/";
 const loginUrl = 'https://euapi.gizwits.com/app/login';
 const heatzy_Application_Id = "c70a66ff039d41b4a220e198b0fcc8b3";
-// The following values are used in the API to set the mode. (To get the mode, the API returns a string "cft" or "eco")
-const cft = 0 // Comfort mode
-const eco = 1 // Eco mode
+// The following values are used in the API to get the mode. (To get the mode, the API returns of these strings)
+const validModes = new Set(['cft', 'eco', 'fro', 'off']); // Known values for the Heatzy mode
+// The following values are used in the API to set the mode. (To set the mode, the API needs one of these values)
+const cft = 0; // Comfort mode
+const eco = 1;// Eco mode
+const fro = 2;// Frozen (Hors Gel) mode
+const off = 3;// Off mode
+
 
 let Service, Characteristic
 
@@ -32,6 +37,16 @@ function SwitchAccessory(log, config) {
   	this.name = config["name"];
   	this.username = config["username"];
   	this.password = config["password"];
+  	this.switchOn = config["switchOn"] || "cft";  	// default value is comfort mode
+  	if (!(validModes.has(this.switchOn))) { // if the set value is invalid, set it to default
+  		this.switchOn = "cft";
+  	};
+  	this.switchOff = config["switchOff"] || "eco";  	// default value is eco mode
+  	if (!(validModes.has(this.switchOff))) { // if the set value is invalid, set it to default
+  		this.switchOff = "eco";
+  	};
+  	this.log("DEBUG - value for on and off : " + this.switchOn + " " + this.switchOff); // XXX
+  	this.interval = config["interval"] || 60;  	// default value is 60s
   	this.interval = config["interval"] || 60;  	// default value is 60s
   	this.trace = config["trace"] || false;	//default value is false (no trace)
 // Heatzy Token management
@@ -105,11 +120,9 @@ async function  getState(device) { //return the state of the device as a boolean
 	const me = device;
 //    me.log ('test getState 0'); // Used for debugging <--
 //    me.log('getUrl ' + me.getUrl); // Used for debugging <--
-	if (me.heatzyTokenExpire_at < Date.now()) {await updateToken (device)}; // Forced at first run, and then calld only if token is expired
+	if (me.heatzyTokenExpire_at < Date.now()) {await updateToken (device)}; // Forced at first run, and then called only if token is expired
    	var state = false;
 	try {
-//  		const response = 	await axios.get (me.getUrl, {
-//  			headers: {'X-Gizwits-Application-Id': heatzy_Application_Id}
   		const response = 	await axios ({
  			method: 'get',
   			url: me.getUrl,
@@ -123,9 +136,10 @@ async function  getState(device) { //return the state of the device as a boolean
     // handle success
 //    me.log ('test getState 1'); // Used for debugging <--
 //	me.log('getState new state ' + response.data.attr.mode); // Used for debugging <--
+//	me.log('me.switchOn : ' + me.switchOn); // Used for debugging <--
 //  	me.log(response);// Used for debugging <--
     if (response.status == 200) {
-		if (response.data.attr.mode == "cft") {state = true	}
+		if (response.data.attr.mode == me.switchOn) {state = true	}   // All modes which are not this.switchOn will turn off the switch
     }
     else { // Useless ? all status != 2xx will be errors
     	me.log ('Error - returned code not 200: ' + response.status + ' ' + response.statusText + ' ' + response.data.error_message);
@@ -145,8 +159,18 @@ async function  setState(device, state) { //Set the state of the device, and ret
 //    me.log ('test setState'); // Used for debugging <--
 //    me.log('postUrl ' + me.postUrl); // Used for debugging <--
 	if (me.heatzyTokenExpire_at < Date.now()) {await updateToken (device)}; // Forced at first run, and then calld only if token is expired
-	let mode = eco;
-	if (state) {mode = cft};
+// Let set mode to the value of the homekit switch
+	let mode = me.switchOff;
+	if (state) {mode = me.switchOn};
+// The API works with litteral modes (in 2023), but the specification is to use a numeric value. So we convert it.
+	let modeNum = 0;
+	switch (mode) {
+		case "cft" : modeNum = cft; break;
+		 case "eco" : modeNum = eco; break;
+		case "fro" : modeNum = fro; break;
+		case "off" : modeNum = off;
+	}
+
 	try {
   		const response = await axios ({
  			method: 'post',
@@ -157,7 +181,7 @@ async function  setState(device, state) { //Set the state of the device, and ret
  			},
    			data: {
 			  "attrs" : {
-			  "mode": mode
+			  "mode": modeNum
 			  }
 			}
   		})
@@ -181,12 +205,12 @@ async function  setState(device, state) { //Set the state of the device, and ret
 
 SwitchAccessory.prototype.updateState = async function() {
   	var state = await getState(this);
-  	if (this.trace) { this.log('DEBUG - Mode was ' + this.state + '. Updating it to : ' + state)} // Uncomment for easier debugging...
+//  	if (this.trace) { this.log('DEBUG - Switch was ' + this.state + '. Updating it to : ' + state)} // Uncomment for easier debugging...
   	if (state !== null ) {
   		if (this.state === null) {this.state = state}  //Initialize for first run
   		if (state !== this.state) {	// If device state has changed since last update
 			if (this.trace) {
-				this.log('State has changed from: ' + this.state + ' to ' + state);
+				this.log('Switch state has changed from: ' + this.state + ' to ' + state);
 			};
 		this.state = state;   // Update last state
 		this.service.updateCharacteristic(Characteristic.On, state);  // update HomeKit
@@ -199,7 +223,7 @@ SwitchAccessory.prototype.updateState = async function() {
 SwitchAccessory.prototype.getOnCharacteristicHandler = async function(callback) {
   	var state = await getState(this);
   	if (this.trace) {
-		this.log('HomeKit asked for state (true for cft, false for eco): ' + state)
+		this.log('HomeKit asked for state (true for on, false for off): ' + state)
 	}
   	if (state != null) {
   		callback (null, state);
@@ -215,7 +239,7 @@ SwitchAccessory.prototype.getOnCharacteristicHandler = async function(callback) 
 SwitchAccessory.prototype.setOnCharacteristicHandler = async function(value, callback) {
    	var state = await setState(this, value);
   	if (this.trace) {
-		this.log('HomeKit changed state to (true for cft, false for eco): ' + state)
+		this.log('HomeKit changed state to (true for on, false for off): ' + state)
 	}
 //  This code works only when the new state is correctly reflected on Heatzy servers.
 // It is not always the case.
